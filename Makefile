@@ -1,13 +1,31 @@
 .DEFAULT_GOAL := help
 
-clean:
+set-env: ## set nightly build
+	@rustup default nightly
+
+clean: ## remove temp files
 	@rm -rf target
 
-release: clean
+release: ## generate release version
 	@cargo build --release
 
-run:
+build: ## generate debug version
+	@cargo build
+
+run: ## run project as dev
 	@cargo run
+
+run-prod: ## run project as prod
+	@cargo run --release
+
+test: ## run tests
+	@cargo test
+
+watch-test: ## run tests with watch
+	@cargo watch -x test
+
+watch-run: ## run project with watch
+	@cargo watch -x run
 
 .PHONY: help
 help: ## show this help
