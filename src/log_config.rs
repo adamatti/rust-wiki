@@ -17,7 +17,7 @@ fn config_log_hardcoded() -> Handle {
     return log4rs::init_config(config).unwrap();
 }
 
-pub fn config(){
+pub fn config_log(){
     let file_name ="log4rs.yml";
 
     if !Path::new(file_name).exists() {

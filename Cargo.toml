@@ -10,10 +10,18 @@ edition = "2018"
 log = "0.4.7"
 log4rs = "0.8.3"
 rocket = "0.4.2"
+bson = "0.13.0"
+mongodb = {version = "0.3.12", features = ["ssl"]}
+serde = "1.0.98"
+serde_derive = "1.0.98"
 
 [dependencies.rocket_contrib]
 version = "0.4.2"
 default-features = false
 features = ["json"]
 
+[dev-dependencies]
+pretty_assertions = "0.6.1"
 
+[development]
+log = "debug"

@@ -13,7 +13,7 @@ build: ## generate debug version
 	@cargo build
 
 run: ## run project as dev
-	@cargo run
+	@RUST_BACKTRACE=1 cargo run
 
 run-prod: ## run project as prod
 	@cargo run --release
@@ -26,6 +26,9 @@ watch-test: ## run tests with watch
 
 watch-run: ## run project with watch
 	@cargo watch -x run
+
+deps:
+	@docker-compose up -d
 
 .PHONY: help
 help: ## show this help

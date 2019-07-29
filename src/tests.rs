@@ -1,9 +1,15 @@
 use super::rocket;
 use rocket::local::Client;
 use rocket::http::{ContentType, Status};
+use crate::db::connect;
+use mongodb::db::{Database};
 
 fn build_client() -> Client{
-    return Client::new(rocket("8080".to_string())).unwrap();
+    // FIXME find how to use global var
+    let db:Database = connect();
+    let rocket = rocket("8080".to_string(),db);
+
+    return Client::new(rocket).unwrap();
 }
 
 #[test]
@@ -30,7 +36,7 @@ fn test_get_tmp(){
 fn test_save_tmp(){
     let client = build_client();
 
-    let query = format!("name={}","tmp2");
+    let query = format!("name={}&field_to_ignore=true&content={}","tmp2","some content2");
 
     let response = client.post("/wiki/tmp")
         .header(ContentType::Form)
