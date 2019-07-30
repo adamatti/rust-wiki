@@ -12,7 +12,7 @@
 	       </div>
 	       <div class="col-lg-2">
 	           <select class="form-control" name="type">
-                   <option value="asciidoctor">asciidoctor
+                   <option value="markdown">markdown
 	           </select>
 	       </div>
 	    </div>

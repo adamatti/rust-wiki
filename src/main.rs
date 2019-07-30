@@ -11,6 +11,7 @@ extern crate bson;
 #[macro_use(bson, doc)]
 extern crate mongodb;
 extern crate log;
+extern crate markdown;
 
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate rocket_contrib;

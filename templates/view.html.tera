@@ -11,6 +11,6 @@
         <a href="/wiki/{{tiddler_name}}/edit" class="btn btn-primary">Edit</a>
     </div>
 </div><br/>
-{{html}}
+{{html | safe}}
 <center>Tags: NOT IMPLEMENTED</center>
 {% endblock content %}

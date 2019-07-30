@@ -29,8 +29,7 @@ impl TemplateContext {
 
     fn set_tiddly(&mut self, tiddly: Tiddly){
         self.body = tiddly.body.to_owned();
-        // FIXME process asciidoc here
-        self.html = tiddly.body.to_owned();
+        self.html = Some(markdown::to_html(tiddly.body.unwrap().as_str()));
     }
 }
 
