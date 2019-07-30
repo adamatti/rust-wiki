@@ -88,6 +88,6 @@ fn to_document<T: ?Sized>(obj:&T) -> Result<Document,Bson>
 
 pub fn connect() -> Database {
     let mongo_uri = get_env_var_or_default("MONGODB_URI","mongodb://localhost:27017");
-    let client = Client::with_uri(mongo_uri).expect("Failed to initialize mongo client.");
+    let client = Client::with_uri(mongo_uri.as_str()).expect("Failed to initialize mongo client.");
     return client.db(DB_NAME);
 }
