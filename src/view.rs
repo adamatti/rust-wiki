@@ -1,15 +1,45 @@
 use log::{debug};
 
-use rocket::{State, Request};
+use rocket::{State, Request, Outcome};
 use rocket::config::{Config, Environment};
-use rocket::request::{LenientForm};
+use rocket::request::{LenientForm, FromRequest};
+use rocket::http::{Status};
+use rocket::response::Redirect;
 use rocket_contrib::json::{JsonValue};
+use rocket_contrib::templates::Template;
 
 use crate::db::{Repo};
 use mongodb::db::{Database};
-use crate::Tiddly;
-use rocket_contrib::templates::Template;
-use rocket::response::Redirect;
+use crate::{Tiddly, get_env_var_or_default};
+
+struct User {
+    name: String
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for User {
+    type Error = ();
+
+    fn from_request(request: &'a Request<'r>) -> Outcome<User, (Status, ()), ()> {
+        let authorization = request.headers().get_one("Authorization");
+        let xfp = request.headers().get_one("x-forwarded-proto");
+
+        // User and pass come from env vars
+        let user = get_env_var_or_default("APP_USER","admin");
+        let password = get_env_var_or_default("APP_PASS","admin");
+
+        // FIXME implement a way to have multiple users
+        let root = User {name: "root".to_string() };
+
+        let part_to_encode = format!("{}:{}",user,password);
+        let string_to_match = format!("Basic {}",base64::encode(&part_to_encode));
+
+        return match [authorization,xfp] {
+            [Some(value),Some("https")] if value == string_to_match => Outcome::Success(root),
+            _ => Outcome::Failure((Status::Forbidden, ()))
+        }
+    }
+}
+
 
 #[derive(Serialize)]
 struct TemplateContext {
@@ -34,7 +64,7 @@ impl TemplateContext {
 }
 
 #[get("/<name>/edit")]
-fn edit_tiddly(db: State<Database>, name: String) -> Template {
+fn edit_tiddly(db: State<Database>, name: String, _user:User) -> Template {
     let mut context = TemplateContext::new(name.to_owned());
 
     return match Tiddly::find_one(name, db.inner()){
@@ -47,7 +77,7 @@ fn edit_tiddly(db: State<Database>, name: String) -> Template {
 }
 
 #[get("/<name>")]
-fn get_by_name(db: State<Database>, name: String) -> Template {
+fn get_by_name(db: State<Database>, name: String, _user:User) -> Template {
     let mut context = TemplateContext::new(name.to_owned());
 
     return match Tiddly::find_one(name, db.inner()){
@@ -60,28 +90,28 @@ fn get_by_name(db: State<Database>, name: String) -> Template {
 }
 
 #[post("/<_name>", data = "<tiddly>")]
-fn save_tiddly_with_name(db: State<Database>, _name:String, tiddly: LenientForm<Tiddly>) -> Template {
+fn save_tiddly_with_name(db: State<Database>, _name:String, tiddly: LenientForm<Tiddly>, _user:User) -> Template {
     debug!("Got tiddly: {}", tiddly.name);
     let entity = tiddly.into_inner().save(db.inner());
-    return get_by_name(db,entity.name);
+    return get_by_name(db,entity.name, _user);
 }
 
 #[post("/", data = "<tiddly>")]
-fn save_tiddly(db: State<Database>, tiddly: LenientForm<Tiddly>) -> Template {
+fn save_tiddly(db: State<Database>, tiddly: LenientForm<Tiddly>, _user:User) -> Template {
     debug!("Got tiddly: {}", tiddly.name);
     let entity = tiddly.into_inner().save(db.inner());
-    return get_by_name(db,entity.name);
+    return get_by_name(db,entity.name, _user);
 }
 
 
 #[delete("/<name>")]
-fn delete_tiddly(db: State<Database>, name:String) -> Redirect {
+fn delete_tiddly(db: State<Database>, name:String, _user:User) -> Redirect {
     Tiddly::delete(name, db.inner());
     Redirect::to("/wiki/home")
 }
 
 #[get("/<name>/delete")]
-fn get_delete_tiddly(db: State<Database>, name:String) -> Redirect {
+fn get_delete_tiddly(db: State<Database>, name:String, _user:User) -> Redirect {
     Tiddly::delete(name, db.inner());
     Redirect::to("/wiki/home")
 }
@@ -98,12 +128,12 @@ fn not_found(req: &Request) -> String {
 }
 
 #[get("/")]
-fn home() -> Redirect {
+fn home(_user:User) -> Redirect {
     Redirect::to("/wiki/home")
 }
 
 #[get("/search?<_q>")]
-fn search(_q:String) -> Template{
+fn search(_q:String, _user:User) -> Template{
     // FIXME implement search
     let context = TemplateContext::new("Search..".to_string());
     Template::render("search",context)

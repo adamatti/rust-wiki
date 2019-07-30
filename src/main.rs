@@ -12,6 +12,7 @@ extern crate bson;
 extern crate mongodb;
 extern crate log;
 extern crate markdown;
+extern crate base64;
 
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
@@ -40,7 +41,7 @@ fn main() {
     info!("Started at port: {}",port);
 }
 
-fn get_env_var_or_default (key: &str, default: & str) -> String {
+pub fn get_env_var_or_default (key: &str, default: & str) -> String {
     return match env::var(key) {
         Ok(val) => val.to_owned(),
         Err(_e) => default.to_owned()

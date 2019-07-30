@@ -15,6 +15,7 @@ mongodb = {version = "0.3.12", features = ["ssl"]}
 serde = "1.0.98"
 serde_derive = "1.0.98"
 markdown = "0.2"
+base64 = "0.10.1"
 
 [dependencies.rocket_contrib]
 version = "0.4.2"
