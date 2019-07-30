@@ -1,6 +1,6 @@
 use log::{debug};
 
-use rocket::{State, Request, Outcome};
+use rocket::{State, Request, Outcome, Response};
 use rocket::config::{Config, Environment};
 use rocket::request::{LenientForm, FromRequest};
 use rocket::http::{Status};
@@ -11,6 +11,7 @@ use rocket_contrib::templates::Template;
 use crate::db::{Repo};
 use mongodb::db::{Database};
 use crate::{Tiddly, get_env_var_or_default};
+use std::io::Cursor;
 
 struct User {
     name: String
@@ -35,7 +36,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
 
         return match [authorization,xfp] {
             [Some(value),Some("https")] if value == string_to_match => Outcome::Success(root),
-            _ => Outcome::Failure((Status::Forbidden, ()))
+            [_, None] => Outcome::Failure((Status::Forbidden, ())),
+            _ => Outcome::Failure((Status::Unauthorized, ()))
         }
     }
 }
@@ -127,6 +129,20 @@ fn not_found(req: &Request) -> String {
     format!("Sorry, '{}' is not a valid path.", req.uri())
 }
 
+#[catch(403)]
+fn forbidden() -> String {
+    String::from("Need https")
+}
+
+#[catch(401)]
+fn unauthorized<'a>() -> Result<Response<'a>,Status> {
+    return Response::build()
+        .raw_header("WWW-Authenticate","Basic")
+        .status(Status::Unauthorized)
+        .sized_body(Cursor::new("unauthorized: wrong user and pass"))
+        .ok();
+}
+
 #[get("/")]
 fn home(_user:User) -> Redirect {
     Redirect::to("/wiki/home")
@@ -149,7 +165,7 @@ pub fn rocket(port: String, db: Database) -> rocket::Rocket {
 
     return rocket::custom(config)
         .manage(db)
-        .register(catchers![not_found])
+        .register(catchers![not_found,unauthorized,forbidden])
         .mount("/wiki",routes![get_by_name,save_tiddly,save_tiddly_with_name, delete_tiddly, get_delete_tiddly, edit_tiddly])
         .mount("/", routes![home,search, health_endpoint])
         .attach(Template::fairing());
