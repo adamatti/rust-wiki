@@ -1,0 +1,4 @@
+{% extends "base" %}
+{% block content %}
+Tiddler not found. Click <a href="/wiki/{{tiddler_name}}/edit">here</a> to create
+{% endblock content %}

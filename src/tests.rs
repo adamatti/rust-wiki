@@ -36,7 +36,7 @@ fn test_get_tmp(){
 fn test_save_tmp(){
     let client = build_client();
 
-    let query = format!("name={}&field_to_ignore=true&content={}","tmp2","some content2");
+    let query = format!("name={}&field_to_ignore=true&body={}","tmp2","some content2");
 
     let response = client.post("/wiki/tmp")
         .header(ContentType::Form)
@@ -53,5 +53,6 @@ fn test_delete_tmp(){
     let response = client.delete("/wiki/tmp")
         .dispatch();
 
-    assert_eq!(response.status(),Status::Ok);
+    // SeeOther == redirect
+    assert_eq!(response.status(),Status::SeeOther);
 }

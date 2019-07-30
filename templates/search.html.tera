@@ -1,0 +1,4 @@
+{% extends "base" %}
+{% block content %}
+Search not implemented
+{% endblock content %}

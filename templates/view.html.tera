@@ -1,0 +1,16 @@
+{% extends "base" %}
+{% block content %}
+<div class="row">
+    <div class="col-lg-10">
+        <form action="/search">
+            <input type="text" class="form-control" name="q" placeholder="Seach...">
+        </form>
+    </div>
+    <div class="col-lg-2" align="right">
+        <a href="/" class="btn btn-primary">Home</a>
+        <a href="/wiki/{{tiddler_name}}/edit" class="btn btn-primary">Edit</a>
+    </div>
+</div><br/>
+{{html}}
+<center>Tags: NOT IMPLEMENTED</center>
+{% endblock content %}

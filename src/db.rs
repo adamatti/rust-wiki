@@ -1,4 +1,4 @@
-use crate::Tiddly;
+use crate::{Tiddly};
 
 use bson;
 use bson::{Bson, Document};
@@ -57,20 +57,22 @@ fn update(tiddly: &Tiddly, db:&Database){
     let filter: Document = doc! {"_id": tiddly.name.to_owned()};
     let mut update: Document = doc! {"name":tiddly.name.to_owned()};
 
-    if let Some(content) = tiddly.content.to_owned() {
+    if let Some(content) = tiddly.body.to_owned() {
         update.insert("content", content);
     };
     coll.update_one(filter, doc! {"$set":update}, None).expect("Error on update");
 }
 
-// FIXME there must be an automatic way to do it
+// FIXME there must be an automatic way to do it (doc to struct)
 fn from_document(doc: OrderedDocument) -> Tiddly {
+    // FIXME use Tiddly::new here (make it work)
     return Tiddly {
         name: doc.get_str("name").expect("name is required").to_string(),
-        content: match doc.get_str("content"){
+        body: match doc.get_str("content") {
             Ok(value) => Some(value.to_string()),
             _ => None
         }
+        // FIXME convert tags
     }
 }
 
