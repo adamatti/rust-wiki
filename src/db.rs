@@ -10,7 +10,6 @@ use mongodb::coll::Collection;
 use serde::Serialize;
 use bson::ordered::OrderedDocument;
 
-const DB_NAME: &'static str = "wiki_mongo";
 const COLLECTION_NAME: &'static str = "tiddlers";
 
 pub trait Repo<T> {
@@ -89,5 +88,6 @@ fn to_document<T: ?Sized>(obj:&T) -> Result<Document,Bson>
 pub fn connect() -> Database {
     let mongo_uri = get_env_var_or_default("MONGODB_URI","mongodb://localhost:27017");
     let client = Client::with_uri(mongo_uri.as_str()).expect("Failed to initialize mongo client.");
-    return client.db(DB_NAME);
+    let db_name = get_env_var_or_default("MONGODB_DATABASE","wiki_mongo");
+    return client.db(db_name.as_str());
 }
