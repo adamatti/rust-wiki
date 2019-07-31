@@ -1,0 +1,38 @@
+Same old https://github.com/adamatti/wiki[wiki], but using https://www.rust-lang.org/[rust lang].
+
+This is my first project using rust, so it probably doesn't follow the best practices. Be aware of it 😊
+
+==== Features
+
+* Add/update/remove items with markdown, persisted on mongo
+* Security - single user, need to provider user/pass as env vars
+* Functional tests - mongo needs to be running, docker-compose provided
+* Ready to deploy to heroku - need to provide env vars:
+** APP_PASS
+** APP_USER
+** MONGODB_DATABASE
+** MONGODB_PASS
+** MONGODB_URI
+** MONGODB_USER
+** RUST_BACKTRACE = full (optional)
+** RUSTUP_TOOLCHAIN = nightly
+
+==== Missing items
+
+* feature: tags
+* feature: search
+* http://asciidoc.org/[asciidoc] - there is no cargo implementation today
+* https://redis.io/[redis] - parse is not slow as java to use cache, but I would like to play with it.
+* test coverage report
+* Dockerfile - why? to deploy to kubernetes
+
+==== Stack / references
+
+* https://rocket.rs[Rocket]
+* https://tera.netlify.com[Tera] - template engine
+* https://github.com/emk/heroku-buildpack-rust[heroku buildpack]
+* https://github.com/rust-unofficial/awesome-rust[awesome list]
+
+==== Questions / comments?
+
+Feel free to contact me.
