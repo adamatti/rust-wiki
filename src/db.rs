@@ -57,8 +57,8 @@ fn update(tiddly: &Tiddly, db:&Database){
     let filter: Document = doc! {"_id": tiddly.name.to_owned()};
     let mut update: Document = doc! {"name":tiddly.name.to_owned()};
 
-    if let Some(content) = tiddly.body.to_owned() {
-        update.insert("content", content);
+    if let Some(body) = tiddly.body.to_owned() {
+        update.insert("body", body);
     };
     coll.update_one(filter, doc! {"$set":update}, None).expect("Error on update");
 }
@@ -68,7 +68,7 @@ fn from_document(doc: OrderedDocument) -> Tiddly {
     // FIXME use Tiddly::new here (make it work)
     return Tiddly {
         name: doc.get_str("name").unwrap_or("no name").to_string(),
-        body: match doc.get_str("content") {
+        body: match doc.get_str("body") {
             Ok(value) => Some(value.to_string()),
             _ => None
         }
