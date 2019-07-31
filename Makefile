@@ -27,6 +27,8 @@ watch-test: ## run tests with watch
 watch-run: ## run project with watch
 	@cargo watch -x run
 
+build-all: build release
+
 deps:
 	@docker-compose up -d
 

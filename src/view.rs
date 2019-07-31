@@ -61,7 +61,7 @@ impl TemplateContext {
 
     fn set_tiddly(&mut self, tiddly: Tiddly){
         self.body = tiddly.body.to_owned();
-        self.html = Some(markdown::to_html(tiddly.body.unwrap().as_str()));
+        self.html = Some(markdown::to_html(tiddly.body.unwrap_or(String::from("")).as_str()));
     }
 }
 
@@ -143,6 +143,11 @@ fn unauthorized<'a>() -> Result<Response<'a>,Status> {
         .ok();
 }
 
+#[catch(500)]
+fn internal_error() -> String{
+    String::from("Internal Error")
+}
+
 #[get("/")]
 fn home(_user:User) -> Redirect {
     Redirect::to("/wiki/home")
@@ -155,6 +160,7 @@ fn search(_q:String, _user:User) -> Template{
     Template::render("search",context)
 }
 
+
 pub fn rocket(port: String, db: Database) -> rocket::Rocket {
     let environment = Environment::active().expect("Unable to detect rocket environment");
 
@@ -165,7 +171,7 @@ pub fn rocket(port: String, db: Database) -> rocket::Rocket {
 
     return rocket::custom(config)
         .manage(db)
-        .register(catchers![not_found,unauthorized,forbidden])
+        .register(catchers![not_found,unauthorized,forbidden,internal_error])
         .mount("/wiki",routes![get_by_name,save_tiddly,save_tiddly_with_name, delete_tiddly, get_delete_tiddly, edit_tiddly])
         .mount("/", routes![home,search, health_endpoint])
         .attach(Template::fairing());

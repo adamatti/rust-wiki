@@ -66,7 +66,7 @@ fn update(tiddly: &Tiddly, db:&Database){
 fn from_document(doc: OrderedDocument) -> Tiddly {
     // FIXME use Tiddly::new here (make it work)
     return Tiddly {
-        name: doc.get_str("name").expect("name is required").to_string(),
+        name: doc.get_str("name").unwrap_or("no name").to_string(),
         body: match doc.get_str("content") {
             Ok(value) => Some(value.to_string()),
             _ => None
