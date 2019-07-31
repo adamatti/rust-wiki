@@ -12,6 +12,7 @@ use crate::db::{Repo};
 use mongodb::db::{Database};
 use crate::{Tiddly, get_env_var_or_default};
 use std::io::Cursor;
+use newrelic::App;
 
 struct User {
     name: String
@@ -66,7 +67,11 @@ impl TemplateContext {
 }
 
 #[get("/<name>/edit")]
-fn edit_tiddly(db: State<Database>, name: String, _user:User) -> Template {
+fn edit_tiddly(db: State<Database>, app:State<App>, name: String, _user:User) -> Template {
+    let _transaction = app.inner()
+        .web_transaction("edit_tiddly")
+        .expect("Could not start transaction");
+
     let mut context = TemplateContext::new(name.to_owned());
 
     return match Tiddly::find_one(name, db.inner()){
@@ -79,7 +84,11 @@ fn edit_tiddly(db: State<Database>, name: String, _user:User) -> Template {
 }
 
 #[get("/<name>")]
-fn get_by_name(db: State<Database>, name: String, _user:User) -> Template {
+fn get_by_name(db: State<Database>, app: State<App>, name: String, _user:User) -> Template {
+    let _transaction = app.inner()
+        .web_transaction("get_by_name")
+        .expect("Could not start transaction");
+
     let mut context = TemplateContext::new(name.to_owned());
 
     return match Tiddly::find_one(name, db.inner()){
@@ -92,28 +101,44 @@ fn get_by_name(db: State<Database>, name: String, _user:User) -> Template {
 }
 
 #[post("/<_name>", data = "<tiddly>")]
-fn save_tiddly_with_name(db: State<Database>, _name:String, tiddly: LenientForm<Tiddly>, _user:User) -> Template {
+fn save_tiddly_with_name(db: State<Database>, app: State<App>, _name:String, tiddly: LenientForm<Tiddly>, _user:User) -> Template {
+    let _transaction = app.inner()
+        .web_transaction("save_tiddly_with_name")
+        .expect("Could not start transaction");
+
     debug!("Got tiddly: {}", tiddly.name);
     let entity = tiddly.into_inner().save(db.inner());
-    return get_by_name(db,entity.name, _user);
+    return get_by_name(db,app,entity.name, _user);
 }
 
 #[post("/", data = "<tiddly>")]
-fn save_tiddly(db: State<Database>, tiddly: LenientForm<Tiddly>, _user:User) -> Template {
+fn save_tiddly(db: State<Database>, app: State<App>, tiddly: LenientForm<Tiddly>, _user:User) -> Template {
+    let _transaction = app.inner()
+        .web_transaction("save_tiddly")
+        .expect("Could not start transaction");
+
     debug!("Got tiddly: {}", tiddly.name);
     let entity = tiddly.into_inner().save(db.inner());
-    return get_by_name(db,entity.name, _user);
+    return get_by_name(db,app,entity.name, _user);
 }
 
 
 #[delete("/<name>")]
-fn delete_tiddly(db: State<Database>, name:String, _user:User) -> Redirect {
+fn delete_tiddly(db: State<Database>, app:State<App>, name:String, _user:User) -> Redirect {
+    let _transaction = app.inner()
+        .web_transaction("delete_tiddly")
+        .expect("Could not start transaction");
+
     Tiddly::delete(name, db.inner());
     Redirect::to("/wiki/home")
 }
 
 #[get("/<name>/delete")]
-fn get_delete_tiddly(db: State<Database>, name:String, _user:User) -> Redirect {
+fn get_delete_tiddly(db: State<Database>, app:State<App>, name:String, _user:User) -> Redirect {
+    let _transaction = app.inner()
+        .web_transaction("get_delete_tiddly")
+        .expect("Could not start transaction");
+
     Tiddly::delete(name, db.inner());
     Redirect::to("/wiki/home")
 }
@@ -161,7 +186,7 @@ fn search(_q:String, _user:User) -> Template{
 }
 
 
-pub fn rocket(port: String, db: Database) -> rocket::Rocket {
+pub fn rocket(port: String, db: Database, app: App) -> rocket::Rocket {
     let environment = Environment::active().expect("Unable to detect rocket environment");
 
     let config = Config::build(environment)
@@ -171,6 +196,7 @@ pub fn rocket(port: String, db: Database) -> rocket::Rocket {
 
     return rocket::custom(config)
         .manage(db)
+        .manage(app)
         .register(catchers![not_found,unauthorized,forbidden,internal_error])
         .mount("/wiki",routes![get_by_name,save_tiddly,save_tiddly_with_name, delete_tiddly, get_delete_tiddly, edit_tiddly])
         .mount("/", routes![home,search, health_endpoint])

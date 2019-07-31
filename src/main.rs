@@ -13,6 +13,7 @@ extern crate mongodb;
 extern crate log;
 extern crate markdown;
 extern crate base64;
+extern crate newrelic;
 
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
@@ -24,6 +25,7 @@ use log::{info};
 use crate::db::{connect};
 use crate::view::{rocket};
 use mongodb::db::{Database};
+use newrelic::{App};
 
 #[derive(FromForm,Serialize, Deserialize,Debug)]
 pub struct Tiddly {
@@ -37,8 +39,17 @@ fn main() {
     log_config::config_log();
     let port = get_env_var_or_default("PORT","8081");
     let db:Database = connect();
-    rocket(port.to_owned(),db).launch();
+
+    let new_app = build_newrelic_app();
+
+    rocket(port.to_owned(),db,new_app).launch();
     info!("Started at port: {}",port);
+}
+
+fn build_newrelic_app() -> App {
+    let license_key = env::var("NEW_RELIC_LICENSE_KEY").unwrap_or_else(|_| "example-license-key".to_string());
+    let app = App::new("rust-wiki", &license_key).expect("Could not create app");
+    return app;
 }
 
 pub fn get_env_var_or_default (key: &str, default: & str) -> String {
