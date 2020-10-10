@@ -2,5 +2,17 @@ version: "3.3"
 services:
     mongo:
         image: "mongo:4.0.10"
+        logging:
+            driver: none
         ports:
             - "27017:27017"
+    app:
+        build: .
+        environment:
+            PORT: "8080"
+            ROCKET_PORT: "8080"
+            MONGODB_URI: "mongodb://mongo:27017"
+        depends_on:
+            - "mongo"
+        ports:
+            - "8080:8080"

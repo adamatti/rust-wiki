@@ -9,10 +9,10 @@ use rocket_contrib::json::{JsonValue};
 use rocket_contrib::templates::Template;
 
 use crate::db::{Repo};
-use mongodb::db::{Database};
 use crate::{Tiddly, get_env_var_or_default};
 use std::io::Cursor;
-use newrelic::App;
+use mongodb::sync::Database;
+//use newrelic::App;
 
 struct User {
     name: String
@@ -24,6 +24,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
     fn from_request(request: &'a Request<'r>) -> Outcome<User, (Status, ()), ()> {
         let authorization = request.headers().get_one("Authorization");
         let xfp = request.headers().get_one("x-forwarded-proto");
+        //let xfp = Some("https"); // FIXME remove it
 
         // User and pass come from env vars
         let user = get_env_var_or_default("APP_USER","admin");
@@ -67,11 +68,7 @@ impl TemplateContext {
 }
 
 #[get("/<name>/edit")]
-fn edit_tiddly(db: State<Database>, app:State<App>, name: String, _user:User) -> Template {
-    let _transaction = app.inner()
-        .web_transaction("edit_tiddly")
-        .expect("Could not start transaction");
-
+fn edit_tiddly(db: State<Database>, name: String, _user:User) -> Template {
     let mut context = TemplateContext::new(name.to_owned());
 
     return match Tiddly::find_one(name, db.inner()){
@@ -84,11 +81,7 @@ fn edit_tiddly(db: State<Database>, app:State<App>, name: String, _user:User) ->
 }
 
 #[get("/<name>")]
-fn get_by_name(db: State<Database>, app: State<App>, name: String, _user:User) -> Template {
-    let _transaction = app.inner()
-        .web_transaction("get_by_name")
-        .expect("Could not start transaction");
-
+fn get_by_name(db: State<Database>, name: String, _user:User) -> Template {
     let mut context = TemplateContext::new(name.to_owned());
 
     return match Tiddly::find_one(name, db.inner()){
@@ -101,48 +94,30 @@ fn get_by_name(db: State<Database>, app: State<App>, name: String, _user:User) -
 }
 
 #[post("/<_name>", data = "<tiddly>")]
-fn save_tiddly_with_name(db: State<Database>, app: State<App>, _name:String, tiddly: LenientForm<Tiddly>, _user:User) -> Template {
-    let _transaction = app.inner()
-        .web_transaction("save_tiddly_with_name")
-        .expect("Could not start transaction");
-
+fn save_tiddly_with_name(db: State<Database>, _name:String, tiddly: LenientForm<Tiddly>, _user:User) -> Template {
     debug!("Got tiddly: {}", tiddly.name);
     let entity = tiddly.into_inner().save(db.inner());
-    return get_by_name(db,app,entity.name, _user);
+    return get_by_name(db,entity.name, _user);
 }
 
 #[post("/", data = "<tiddly>")]
-fn save_tiddly(db: State<Database>, app: State<App>, tiddly: LenientForm<Tiddly>, _user:User) -> Template {
-    let _transaction = app.inner()
-        .web_transaction("save_tiddly")
-        .expect("Could not start transaction");
-
+fn save_tiddly(db: State<Database>, tiddly: LenientForm<Tiddly>, _user:User) -> Template {
     debug!("Got tiddly: {}", tiddly.name);
     let entity = tiddly.into_inner().save(db.inner());
-    return get_by_name(db,app,entity.name, _user);
+    return get_by_name(db,entity.name, _user);
 }
 
-
 #[delete("/<name>")]
-fn delete_tiddly(db: State<Database>, app:State<App>, name:String, _user:User) -> Redirect {
-    let _transaction = app.inner()
-        .web_transaction("delete_tiddly")
-        .expect("Could not start transaction");
-
+fn delete_tiddly(db: State<Database>, name:String, _user:User) -> Redirect {
     Tiddly::delete(name, db.inner());
     Redirect::to("/wiki/home")
 }
 
 #[get("/<name>/delete")]
-fn get_delete_tiddly(db: State<Database>, app:State<App>, name:String, _user:User) -> Redirect {
-    let _transaction = app.inner()
-        .web_transaction("get_delete_tiddly")
-        .expect("Could not start transaction");
-
+fn get_delete_tiddly(db: State<Database>, name:String, _user:User) -> Redirect {
     Tiddly::delete(name, db.inner());
     Redirect::to("/wiki/home")
 }
-
 
 #[get("/health")]
 fn health_endpoint() -> JsonValue {
@@ -186,17 +161,15 @@ fn search(_q:String, _user:User) -> Template{
 }
 
 
-pub fn rocket(port: String, db: Database, app: App) -> rocket::Rocket {
+pub fn rocket(port: String, db: Database) -> rocket::Rocket {
     let environment = Environment::active().expect("Unable to detect rocket environment");
 
     let config = Config::build(environment)
-        //.log_level(LoggingLevel::Debug) // FIXME remove it
         .port(string_to_u16(&port))
         .finalize().expect("Unable to build rocket config");
 
     return rocket::custom(config)
         .manage(db)
-        .manage(app)
         .register(catchers![not_found,unauthorized,forbidden,internal_error])
         .mount("/wiki",routes![get_by_name,save_tiddly,save_tiddly_with_name, delete_tiddly, get_delete_tiddly, edit_tiddly])
         .mount("/", routes![home,search, health_endpoint])

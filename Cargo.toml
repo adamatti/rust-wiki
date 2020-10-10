@@ -3,6 +3,9 @@ name = "rust-wiki"
 version = "0.1.0"
 authors = ["Marcelo Adamatti <adamatti@gmail.com>"]
 edition = "2018"
+[[bin]]
+name = "rust-wiki"
+path = "src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,13 +13,15 @@ edition = "2018"
 log = "0.4.7"
 log4rs = "0.8.3"
 rocket = "0.4.2"
-bson = "0.13.0"
-mongodb = {version = "0.3.12", features = ["ssl"]}
 serde = "1.0.98"
 serde_derive = "1.0.98"
-markdown = "0.2"
+markdown = "0.3"
 base64 = "0.10.1"
-newrelic = "0.2.0"
+
+[dependencies.mongodb]
+version = "1.1.1"
+default-features = false
+features = ["sync"]
 
 [dependencies.rocket_contrib]
 version = "0.4.2"

@@ -2,7 +2,7 @@ use super::rocket;
 use rocket::local::Client;
 use rocket::http::{ContentType, Status};
 use crate::db::connect;
-use mongodb::db::{Database};
+use mongodb::sync::{Database};
 
 fn build_client() -> Client{
     // FIXME find how to use global var

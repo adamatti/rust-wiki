@@ -1,15 +1,13 @@
 use crate::{Tiddly, get_env_var_or_default};
-
-use bson;
-use bson::{Bson, Document};
-
-use mongodb::{Client, ThreadedClient};
-use mongodb::db::{Database,ThreadedDatabase};
-use mongodb::coll::Collection;
+use crate::db::bson::Document;
+use crate::db::bson::Bson;
+use mongodb::{bson};
+use mongodb::bson::doc;
 
 use serde::Serialize;
-use bson::ordered::OrderedDocument;
-use std::env;
+use mongodb::sync::{Collection, Database, Client};
+use mongodb::error::Error;
+use mongodb::results::InsertOneResult;
 
 const COLLECTION_NAME: &'static str = "tiddlers";
 
@@ -26,7 +24,9 @@ impl Repo<Tiddly> for Tiddly {
 
         // Use name as Id
         doc.insert("_id", self.name.to_owned());
-        coll.insert_one(doc, None).expect("Error on insert");
+        match coll.insert_one(doc, None) {
+            _ => {} // Ignore
+        }
 
         // FIXME find how to update only when isn't insert
         update(&self, db);
@@ -64,7 +64,7 @@ fn update(tiddly: &Tiddly, db:&Database){
 }
 
 // FIXME there must be an automatic way to do it (doc to struct)
-fn from_document(doc: OrderedDocument) -> Tiddly {
+fn from_document(doc: Document) -> Tiddly {
     // FIXME use Tiddly::new here (make it work)
     return Tiddly {
         name: doc.get_str("name").unwrap_or("no name").to_string(),
@@ -88,18 +88,8 @@ fn to_document<T: ?Sized>(obj:&T) -> Result<Document,Bson>
 
 pub fn connect() -> Database {
     let mongo_uri = get_env_var_or_default("MONGODB_URI","mongodb://localhost:27017");
-    let client:Client = Client::with_uri(mongo_uri.as_str()).expect("Failed to initialize mongo client.");
+    let client = Client::with_uri_str(mongo_uri.as_str()).expect("Failed to get client");
     let db_name = get_env_var_or_default("MONGODB_DATABASE","wiki_mongo");
-    let database: Database = client.db(db_name.as_str());
-
-    match [env::var("MONGODB_USER"), env::var("MONGODB_PASS")]{
-        [Ok(user),Ok(pass)] => {
-            database.auth(user.as_str(),pass.as_str()).expect("Error doing mongo auth");
-
-        },
-        [_,_] => {}
-    }
-
-
+    let database: Database = client.database(db_name.as_str());
     return database;
 }
